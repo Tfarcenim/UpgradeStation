@@ -1,0 +1,29 @@
+package tfar.upgradestation.datagen;
+
+import net.minecraft.core.Direction;
+import net.minecraft.data.PackOutput;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LecternBlock;
+import net.minecraftforge.client.model.generators.BlockStateProvider;
+import net.minecraftforge.client.model.generators.ConfiguredModel;
+import net.minecraftforge.client.model.generators.ModelFile;
+import net.minecraftforge.common.data.ExistingFileHelper;
+import tfar.upgradestation.Init;
+import tfar.upgradestation.UpgradeStation;
+
+public class ModBlockstateProvider extends BlockStateProvider {
+
+
+    public ModBlockstateProvider(PackOutput pOutput, ExistingFileHelper helper) {
+        super(pOutput, UpgradeStation.MOD_ID,helper);
+    }
+
+    @Override
+    protected void registerStatesAndModels() {
+        ModelFile.ExistingModelFile modelFile = models().getExistingFile(modLoc("block/upgrade_station"));
+        getVariantBuilder(Init.BLOCK).forAllStates(state -> {
+            Direction direction = state.getValue(LecternBlock.FACING);
+            return ConfiguredModel.builder().modelFile(modelFile).rotationY((int) direction.toYRot()).build();
+        });
+    }
+}
