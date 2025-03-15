@@ -1,0 +1,12 @@
+{
+  "fail": {
+    "sounds": [
+      "upgradestation:fail"
+    ]
+  },
+  "success": {
+    "sounds": [
+      "upgradestation:success"
+    ]
+  }
+}

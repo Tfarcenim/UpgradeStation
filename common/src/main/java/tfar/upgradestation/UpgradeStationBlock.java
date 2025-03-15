@@ -17,9 +17,23 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class UpgradeStationBlock extends Block {
+
+
+    public static final VoxelShape SHAPE_BASE = Block.box(1, 0, 1, 15, 3, 15);
+    public static final VoxelShape SHAPE_POST = Block.box(3, 2, 3, 13, 14, 13);
+    public static final VoxelShape SHAPE_COMMON = Shapes.or(SHAPE_BASE, SHAPE_POST);
+    public static final VoxelShape SHAPE_TOP_PLATE = Block.box(0, 15, 0, 16, 16, 16);
+    public static final VoxelShape SHAPE_COLLISION = Shapes.or(SHAPE_COMMON, SHAPE_TOP_PLATE);
+    public static final VoxelShape SHAPE_WEST = SHAPE_COLLISION;
+    public static final VoxelShape SHAPE_NORTH = SHAPE_COLLISION;
+    public static final VoxelShape SHAPE_EAST = SHAPE_COLLISION;
+    public static final VoxelShape SHAPE_SOUTH = SHAPE_COLLISION;
+
+
     public UpgradeStationBlock(Properties $$0) {
         super($$0);
         this.registerDefaultState(this.stateDefinition.any().setValue(LecternBlock.FACING, Direction.NORTH));
@@ -34,7 +48,7 @@ public class UpgradeStationBlock extends Block {
 
     @Override
     public VoxelShape getOcclusionShape(BlockState $$0, BlockGetter $$1, BlockPos $$2) {
-        return LecternBlock.SHAPE_COMMON;
+        return SHAPE_COMMON;
     }
 
     @Override
@@ -68,19 +82,19 @@ public class UpgradeStationBlock extends Block {
     public VoxelShape getShape(BlockState $$0, BlockGetter $$1, BlockPos $$2, CollisionContext $$3) {
         switch ($$0.getValue(LecternBlock.FACING)) {
             case NORTH -> {
-                return LecternBlock.SHAPE_NORTH;
+                return SHAPE_NORTH;
             }
             case SOUTH -> {
-                return LecternBlock.SHAPE_SOUTH;
+                return SHAPE_SOUTH;
             }
             case EAST -> {
-                return LecternBlock.SHAPE_EAST;
+                return SHAPE_EAST;
             }
             case WEST -> {
-                return LecternBlock.SHAPE_WEST;
+                return SHAPE_WEST;
             }
             default -> {
-                return LecternBlock.SHAPE_COMMON;
+                return SHAPE_COMMON;
             }
         }
     }

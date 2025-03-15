@@ -6,7 +6,10 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+
+import java.text.DecimalFormat;
 
 public class UpgradeStationMenuScreen extends AbstractContainerScreen<UpgradeStationMenu> {
     private static final ResourceLocation CRAFTING_TABLE_LOCATION = UpgradeStation.id("textures/gui/upgrade_station.png");
@@ -25,15 +28,33 @@ public class UpgradeStationMenuScreen extends AbstractContainerScreen<UpgradeSta
         this.renderTooltip(pGuiGraphics, pMouseX, pMouseY);
     }
 
+    public static final DecimalFormat decimalFormat = new DecimalFormat("##.##");
+
     @Override
     protected void renderLabels(GuiGraphics matrices, int $$1, int $$2) {
         //super.renderLabels(matrices, $$1, $$2);
-        int xp = menu.getXPRequired();
-        if (xp > -1) {
-            Component component = Component.translatable("container.repair.cost",xp);
-            int $$8 = this.imageWidth - 8 - this.font.width(component) - 2;
-            matrices.drawString(font,component, $$8, 72, menu.canPickup() ? 0x80ff20 : 0xff6060);
+
+        if (menu.selectedRecipe != null && !menu.resultSlot.getItem(0).isEmpty()) {
+            int cost = menu.selectedRecipe.getCost();
+            if (cost > 0) {
+                Component component = Component.literal("Cost: " + cost);
+                int x = this.imageWidth - 75 - this.font.width(component) - 2;
+                matrices.drawString(font, component, x, 113, menu.hasMoney() ? 0x80ff20 :  0xff6060);
+            }
+
+            double chance = menu.getActualChance();
+
+            String format = decimalFormat.format(chance * 100)+"%";
+            Component component = Component.literal(format);
+            int x = this.imageWidth - 75 - this.font.width(component) - 2;
+            matrices.drawString(font, component, x, 54, getColor(chance));
         }
+
+    }
+
+    protected int getColor(double chance) {
+        float f = (float) Mth.clamp(chance,0,1);
+        return Mth.hsvToRgb(f / 3.0F, 1.0F, 1.0F);
     }
 
     @Override

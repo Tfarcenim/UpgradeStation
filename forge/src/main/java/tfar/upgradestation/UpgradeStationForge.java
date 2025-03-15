@@ -36,5 +36,8 @@ public class UpgradeStationForge {
 
         event.register(Registries.RECIPE_SERIALIZER,UpgradeStation.id("upgrade_station"),() -> ModRecipeSerializers.UPGRADE_STATION);
 
+        event.register(Registries.SOUND_EVENT,ModSounds.FAIL.getLocation(),() -> ModSounds.FAIL);
+        event.register(Registries.SOUND_EVENT,ModSounds.SUCCESS.getLocation(),() -> ModSounds.SUCCESS);
+
     }
 }

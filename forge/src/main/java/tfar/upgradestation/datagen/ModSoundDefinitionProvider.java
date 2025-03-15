@@ -2,7 +2,9 @@ package tfar.upgradestation.datagen;
 
 import net.minecraft.data.PackOutput;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.common.data.SoundDefinition;
 import net.minecraftforge.common.data.SoundDefinitionsProvider;
+import tfar.upgradestation.ModSounds;
 import tfar.upgradestation.UpgradeStation;
 
 public class ModSoundDefinitionProvider extends SoundDefinitionsProvider {
@@ -19,6 +21,7 @@ public class ModSoundDefinitionProvider extends SoundDefinitionsProvider {
 
     @Override
     public void registerSounds() {
-
+        add(ModSounds.FAIL, SoundDefinition.definition().with(sound(UpgradeStation.id("fail"))));
+        add(ModSounds.SUCCESS, SoundDefinition.definition().with(sound(UpgradeStation.id("success"))));
     }
 }

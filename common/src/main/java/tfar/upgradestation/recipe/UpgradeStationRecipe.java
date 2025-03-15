@@ -4,41 +4,53 @@ import com.google.gson.JsonObject;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
 import tfar.upgradestation.ModRecipeSerializers;
 import tfar.upgradestation.ModRecipeTypes;
+import tfar.upgradestation.Strings;
+import tfar.upgradestation.UpgradeStationMenu;
 
 public class UpgradeStationRecipe implements Recipe<Container> {
 
     protected final ResourceLocation id;
-    final Ingredient template;//upgrade scroll
-    final Ingredient base;//stone sword
-    final Ingredient addition;//diamond
-
-    final int moneyCost;
+    public final Ingredient weapon;//stone sword 0
+    public final Ingredient gem;//diamond 1
+    public final Ingredient scroll;//upgrade scroll 2
+    final int cost;
     final double baseChance;
 
     final ItemStack result;//netherite sword
 
-    public UpgradeStationRecipe(ResourceLocation id, Ingredient template, Ingredient base, Ingredient addition, int moneyCost, double baseChance, ItemStack result) {
+    public UpgradeStationRecipe(ResourceLocation id, Ingredient weapon, Ingredient gem, Ingredient scroll, int cost, double baseChance, ItemStack result) {
         this.id = id;
-        this.template = template;
-        this.base = base;
-        this.addition = addition;
-        this.moneyCost = moneyCost;
+        this.scroll = scroll;
+        this.weapon = weapon;
+        this.gem = gem;
+        this.cost = cost;
         this.baseChance = baseChance;
         this.result = result;
     }
 
     @Override
     public boolean matches(Container container, Level level) {
-        return this.template.test(container.getItem(0)) && this.base.test(container.getItem(1)) && this.addition.test(container.getItem(2));
+        return isWeapon(container.getItem(UpgradeStationMenu.WEAPON_SLOT)) && isGem(container.getItem(UpgradeStationMenu.GEM_SLOT));
+    }
+
+    public boolean isWeapon(ItemStack stack) {
+        return weapon.test(stack);
+    }
+
+    public boolean isGem(ItemStack stack) {
+        return gem.test(stack);
+    }
+
+    public boolean isScroll(ItemStack stack){
+        return scroll.test(stack);
     }
 
     @Override
@@ -47,8 +59,8 @@ public class UpgradeStationRecipe implements Recipe<Container> {
     }
 
     @Override
-    public boolean canCraftInDimensions(int i, int i1) {
-        return false;
+    public boolean canCraftInDimensions(int width, int height) {
+        return width >= 3 && height >= 1;
     }
 
     @Override
@@ -71,20 +83,54 @@ public class UpgradeStationRecipe implements Recipe<Container> {
         return ModRecipeTypes.UPGRADE_STATION;
     }
 
+    public int getCost() {
+        return cost;
+    }
+
+    public double getBaseChance() {
+        return baseChance;
+    }
+
+    public double getActualChance(ItemStack scroll) {
+        return Mth.clamp(baseChance * (1 + scroll.getCount() /4d),0,1);
+    }
+
     public static class Serializer implements RecipeSerializer<UpgradeStationRecipe> {
+
         @Override
         public UpgradeStationRecipe fromJson(ResourceLocation resourceLocation, JsonObject jsonObject) {
-            return null;
+            Ingredient weapon = Ingredient.fromJson(GsonHelper.getNonNull(jsonObject, Strings.WEAPON));
+            Ingredient gem = Ingredient.fromJson(GsonHelper.getNonNull(jsonObject, Strings.GEM));
+            Ingredient scroll = Ingredient.fromJson(GsonHelper.getNonNull(jsonObject, Strings.SCROLL));
+            int cost = GsonHelper.getAsInt(jsonObject,"cost",0);
+            double chance = GsonHelper.getAsDouble(jsonObject,"base_chance",1);
+            ItemStack itemstack = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(jsonObject, "result"));
+            return new UpgradeStationRecipe(resourceLocation,weapon,gem,scroll,cost,chance,itemstack);
         }
 
         @Override
         public UpgradeStationRecipe fromNetwork(ResourceLocation resourceLocation, FriendlyByteBuf friendlyByteBuf) {
-            return null;
+            Ingredient ingredient = Ingredient.fromNetwork(friendlyByteBuf);
+            Ingredient ingredient1 = Ingredient.fromNetwork(friendlyByteBuf);
+            Ingredient ingredient2 = Ingredient.fromNetwork(friendlyByteBuf);
+
+            int cost = friendlyByteBuf.readInt();
+            double chance = friendlyByteBuf.readDouble();
+
+            ItemStack itemstack = friendlyByteBuf.readItem();
+            return new UpgradeStationRecipe(resourceLocation, ingredient, ingredient1, ingredient2,cost,chance, itemstack);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf friendlyByteBuf, UpgradeStationRecipe upgradeStationRecipe) {
+            upgradeStationRecipe.scroll.toNetwork(friendlyByteBuf);
+            upgradeStationRecipe.weapon.toNetwork(friendlyByteBuf);
+            upgradeStationRecipe.gem.toNetwork(friendlyByteBuf);
 
+            friendlyByteBuf.writeInt(upgradeStationRecipe.cost);
+            friendlyByteBuf.writeDouble(upgradeStationRecipe.baseChance);
+
+            friendlyByteBuf.writeItem(upgradeStationRecipe.result);
         }
     }
 }

@@ -1,5 +1,7 @@
 package tfar.upgradestation.platform.services;
 
+import net.minecraft.world.entity.player.Player;
+
 public interface IPlatformHelper {
 
     /**
@@ -33,4 +35,8 @@ public interface IPlatformHelper {
 
         return isDevelopmentEnvironment() ? "development" : "production";
     }
+
+    boolean hasAtLeast(Player player, int amount);
+
+    void takeMoney(Player player, int amount);
 }

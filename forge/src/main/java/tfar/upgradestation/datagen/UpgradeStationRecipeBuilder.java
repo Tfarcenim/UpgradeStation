@@ -20,9 +20,9 @@ import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
 public class UpgradeStationRecipeBuilder {
-    private final Ingredient template;
-    private final Ingredient base;
-    private final Ingredient addition;
+    private final Ingredient weapon;
+    private final Ingredient gem;
+    private final Ingredient scroll;
     private final RecipeCategory category;
 
     private int money;
@@ -31,12 +31,12 @@ public class UpgradeStationRecipeBuilder {
     private final Advancement.Builder advancement = Advancement.Builder.recipeAdvancement();
     private final RecipeSerializer<?> type;
 
-    public UpgradeStationRecipeBuilder(RecipeSerializer<?> type, Ingredient template, Ingredient base, Ingredient addition, RecipeCategory category, Item result) {
+    public UpgradeStationRecipeBuilder(RecipeSerializer<?> type, Ingredient weapon, Ingredient gem, Ingredient scroll, RecipeCategory category, Item result) {
         this.category = category;
         this.type = type;
-        this.template = template;
-        this.base = base;
-        this.addition = addition;
+        this.weapon = weapon;
+        this.gem = gem;
+        this.scroll = scroll;
         this.result = result;
     }
 
@@ -66,7 +66,7 @@ public class UpgradeStationRecipeBuilder {
     public void save(Consumer<FinishedRecipe> recipeConsumer, ResourceLocation location) {
         this.ensureValid(location);
         this.advancement.parent(RecipeBuilder.ROOT_RECIPE_ADVANCEMENT).addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(location)).rewards(AdvancementRewards.Builder.recipe(location)).requirements(RequirementsStrategy.OR);
-        recipeConsumer.accept(new UpgradeStationRecipeBuilder.Result(location, this.type, this.template, this.base, this.addition,money,baseChance, this.result, this.advancement, location.withPrefix("recipes/" + this.category.getFolderName() + "/")));
+        recipeConsumer.accept(new UpgradeStationRecipeBuilder.Result(location, this.type, this.weapon, this.gem, this.scroll,money,baseChance, this.result, this.advancement, location.withPrefix("recipes/" + this.category.getFolderName() + "/")));
     }
 
     private void ensureValid(ResourceLocation location) {
@@ -75,11 +75,15 @@ public class UpgradeStationRecipeBuilder {
         }
     }
 
-    public record Result(ResourceLocation id, RecipeSerializer<?> type, Ingredient template, Ingredient base, Ingredient addition,int money,double baseChance, Item result, Advancement.Builder advancement, ResourceLocation advancementId) implements FinishedRecipe {
+    public record Result(ResourceLocation id, RecipeSerializer<?> type, Ingredient weapon, Ingredient gem, Ingredient scroll, int money, double baseChance, Item result, Advancement.Builder advancement, ResourceLocation advancementId) implements FinishedRecipe {
         public void serializeRecipeData(JsonObject json) {
-            json.add("template", this.template.toJson());
-            json.add("base", this.base.toJson());
-            json.add("addition", this.addition.toJson());
+            json.add("weapon", this.weapon.toJson());
+            json.add("gem", this.gem.toJson());
+            json.add("scroll", this.scroll.toJson());
+
+            json.addProperty("cost",money);
+            json.addProperty("base_chance",baseChance);
+
             JsonObject jsonobject = new JsonObject();
             jsonobject.addProperty("item", BuiltInRegistries.ITEM.getKey(this.result).toString());
             json.add("result", jsonobject);

@@ -13,12 +13,13 @@ mixin {
 legacyForge {
     version = "${minecraft_version}-${forge_version}"
 
-    validateAccessTransformers = true
+    validateAccessTransformers = false
 
     def at = project(':common').file('src/main/resources/META-INF/accesstransformer.cfg')
     if (at.exists()) {
-        accessTransformers = ["src/main/resources/META-INF/accesstransformer.cfg"]
+        accessTransformers.from(at)
     }
+
     parchment {
         minecraftVersion = parchment_minecraft
         mappingsVersion = parchment_version
@@ -52,6 +53,12 @@ dependencies {
     compileOnly group: 'org.jetbrains',name:'annotations',version: '24.1.0'
 
     modImplementation "dev.architectury:architectury-forge:$rootProject.architectury_api_version"
+
+    modImplementation "me.shedaniel:RoughlyEnoughItems-forge:$rei_version"
+
+    modImplementation "me.shedaniel.cloth:cloth-config-forge:$cloth_config_version"
+
+    modImplementation("curse.maven:lightmans-currency-472521:6285622")
 }
 
 jar {
