@@ -14,6 +14,8 @@ public class UpgradeStationMenuScreen extends AbstractContainerScreen<UpgradeSta
     public UpgradeStationMenuScreen(UpgradeStationMenu $$0, Inventory $$1, Component $$2) {
         super($$0, $$1, $$2);
         this.titleLabelX = 29;
+        imageWidth = 175;
+        imageHeight = 221;
     }
 
     @Override
@@ -25,7 +27,7 @@ public class UpgradeStationMenuScreen extends AbstractContainerScreen<UpgradeSta
 
     @Override
     protected void renderLabels(GuiGraphics matrices, int $$1, int $$2) {
-        super.renderLabels(matrices, $$1, $$2);
+        //super.renderLabels(matrices, $$1, $$2);
         int xp = menu.getXPRequired();
         if (xp > -1) {
             Component component = Component.translatable("container.repair.cost",xp);

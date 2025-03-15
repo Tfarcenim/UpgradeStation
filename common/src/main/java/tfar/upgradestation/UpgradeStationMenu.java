@@ -6,14 +6,19 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import tfar.upgradestation.recipe.UpgradeStationRecipe;
+
+import java.util.List;
 
 public class UpgradeStationMenu extends AbstractContainerMenu {
 
     private final ContainerLevelAccess access;
-    private final Container craftSlots = new SimpleContainer(2);
-    private final ResultContainer resultSlots = new ResultContainer();
+    private final Container craftSlots = new SimpleContainer(3);
+    private final ResultContainer resultSlot = new ResultContainer();
     private final Player player;
+    private final Level level;
+    private final List<UpgradeStationRecipe> recipes;
     public UpgradeStationRecipe current;
     private final DataSlot dataSlot = DataSlot.standalone();
     private final DataSlot canPickup = DataSlot.standalone();
@@ -25,23 +30,38 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
 
     protected UpgradeStationMenu(int id, Inventory inventory, ContainerLevelAccess access) {
         super(Init.MENU_TYPE, id);
+        this.level = inventory.player.level();
+        this.recipes = this.level.getRecipeManager().getAllRecipesFor(ModRecipeTypes.UPGRADE_STATION);
         this.access = access;
         this.player = inventory.player;
 
-        this.addSlot(new Slot( this.resultSlots, 0, 124, 35));
+        this.addSlot(new Slot( this.resultSlot, 0, 80, 18){
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return false;
+            }
+
+
+            @Override
+            public boolean mayPickup(Player player) {
+                return current != null && current.matches(craftSlots, level);
+            }
+        });
 
             for(int j = 0; j < 3; ++j) {
-                this.addSlot(new Slot(this.craftSlots, j, 30 + j * 18, 17));
+                this.addSlot(new Slot(this.craftSlots, j, 46 + j * 34, 81));
             }
+
+            int y1= 140;
 
         for(int k = 0; k < 3; ++k) {
             for(int i1 = 0; i1 < 9; ++i1) {
-                this.addSlot(new Slot(inventory, i1 + k * 9 + 9, 8 + i1 * 18, 84 + k * 18));
+                this.addSlot(new Slot(inventory, i1 + k * 9 + 9, 8 + i1 * 18, y1+ + k * 18));
             }
         }
 
         for(int l = 0; l < 9; ++l) {
-            this.addSlot(new Slot(inventory, l, 8 + l * 18, 142));
+            this.addSlot(new Slot(inventory, l, 8 + l * 18, 58 + y1));
         }
         dataSlot.set(-1);
         addDataSlot(dataSlot);
