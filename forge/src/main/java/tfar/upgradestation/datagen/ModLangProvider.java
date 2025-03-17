@@ -23,7 +23,15 @@ public class ModLangProvider extends LanguageProvider {
     @Override
     protected void addTranslations() {
         addDefaultBlock(() -> Init.BLOCK);
-        addDefaultItem(() -> Init.UPGRADE_SCROLL);
+        addDefaultItem(() -> Init.SCROLL_I);
+        add(Init.SCROLL_II,"Scroll II");
+        add(Init.SCROLL_III,"Scroll III");
+        add(Init.SCROLL_IV,"Scroll IV");
+
+        addDefaultItem(() -> Init.SCROLL_OF_PROTECTION_I);
+        add(Init.SCROLL_OF_PROTECTION_II,"Scroll of Protection II");
+        add(Init.SCROLL_OF_PROTECTION_III,"Scroll of Protection III");
+        add(Init.SCROLL_OF_PROTECTION_IV,"Scroll of Protection IV");
     }
 
 

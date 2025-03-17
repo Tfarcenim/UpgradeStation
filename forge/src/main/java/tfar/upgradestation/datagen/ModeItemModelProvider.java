@@ -7,6 +7,7 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.registries.RegistryObject;
 import tfar.upgradestation.Init;
 import tfar.upgradestation.UpgradeStation;
 
@@ -18,7 +19,18 @@ public class ModeItemModelProvider extends ItemModelProvider {
     @Override
     protected void registerModels() {
         makeSimpleBlockItem(Init.ITEM);
-        makeOneLayerItem(Init.UPGRADE_SCROLL);
+        ResourceLocation scroll = modLoc("item/scroll");
+
+        generatedItem(Init.SCROLL_I,scroll);
+        generatedItem(Init.SCROLL_II,scroll);
+        generatedItem(Init.SCROLL_III,scroll);
+        generatedItem(Init.SCROLL_IV,scroll);
+
+        generatedItem(Init.SCROLL_OF_PROTECTION_I,scroll);
+        generatedItem(Init.SCROLL_OF_PROTECTION_II,scroll);
+        generatedItem(Init.SCROLL_OF_PROTECTION_III,scroll);
+        generatedItem(Init.SCROLL_OF_PROTECTION_IV,scroll);
+
     }
 
     protected void makeSimpleBlockItem(Item item, ResourceLocation loc) {
@@ -31,20 +43,14 @@ public class ModeItemModelProvider extends ItemModelProvider {
         makeSimpleBlockItem(item,UpgradeStation.id("block/" + BuiltInRegistries.ITEM.getKey(item).getPath()));
     }
 
-    protected void makeOneLayerItem(Item item, ResourceLocation texture) {
+
+    private void generatedItem(Item item ,ResourceLocation texture) {
         String path = BuiltInRegistries.ITEM.getKey(item).getPath();
-        if (existingFileHelper.exists(new ResourceLocation(texture.getNamespace(), "item/" + texture.getPath())
-                , PackType.CLIENT_RESOURCES, ".png", "textures")) {
-            getBuilder(path).parent(getExistingFile(mcLoc("item/generated")))
-                    .texture("layer0", new ResourceLocation(texture.getNamespace(), "item/" + texture.getPath()));
-        } else {
-            System.out.println("no texture for " + item + " found, skipping");
-        }
+        singleTexture(path, new ResourceLocation("item/generated"),
+                "layer0", texture);
     }
 
-    protected void makeOneLayerItem(Item item) {
-        ResourceLocation texture = BuiltInRegistries.ITEM.getKey(item);
-        makeOneLayerItem(item, texture);
+    private void generatedItem(Item item) {
+        generatedItem(item,modLoc("item/"+BuiltInRegistries.ITEM.getKey(item).getPath()));
     }
-
 }

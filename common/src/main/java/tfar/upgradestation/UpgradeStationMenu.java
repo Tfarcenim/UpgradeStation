@@ -69,7 +69,7 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(this.craftSlots, SCROLL_SLOT, 46 + 2 * 34, 81){
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return super.mayPlace(stack) && recipes.stream().anyMatch(upgradeStationRecipe -> upgradeStationRecipe.isScroll(stack));
+                return super.mayPlace(stack) && USConfig.CONFIG.scroll_map.get().containsKey(stack.getItem());
             }
 
             @Override
@@ -202,6 +202,9 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
 
     protected void onTake(Player player, ItemStack stack) {
         boolean worked = player.getRandom().nextDouble() < getActualChance();
+        ItemStack scroll = craftSlots.getItem(SCROLL_SLOT);
+
+        boolean protectIfFailed = !scroll.isEmpty() && USConfig.CONFIG.scroll_map.get().get(scroll.getItem()).protectsWeapon();
 
         if (worked) {
             stack.onCraftedBy(player.level(), player, stack.getCount());
@@ -212,8 +215,11 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
 
         this.access.execute((p_40263_, p_40264_) -> {
             Services.PLATFORM.takeMoney(player,selectedRecipe.getCost());
-            this.shrinkStackInSlot(0);
-            this.shrinkStackInSlot(1);
+
+            if (!protectIfFailed || worked) {
+                this.shrinkStackInSlot(0);
+                this.shrinkStackInSlot(1);
+            }
             this.shrinkStackInSlot(2);
             SoundEvent soundEvent = worked ? ModSounds.SUCCESS : ModSounds.FAIL;
             ((ServerPlayer)player).serverLevel().playSound(null,p_40264_,soundEvent, SoundSource.PLAYERS,1,1);
@@ -272,7 +278,7 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
         } else if (recipe.isGem(stack)) {
             return Optional.of(GEM_SLOT);
         } else {
-            return recipe.isScroll(stack) ? Optional.of(SCROLL_SLOT) : Optional.empty();
+            return USConfig.CONFIG.scroll_map.get().containsKey(stack.getItem()) ? Optional.of(SCROLL_SLOT) : Optional.empty();
         }
     }
 

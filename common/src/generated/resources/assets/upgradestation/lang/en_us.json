@@ -1,4 +1,11 @@
 {
   "block.upgradestation.upgrade_station": "Upgrade Station",
-  "item.upgradestation.upgrade_scroll": "Upgrade Scroll"
+  "item.upgradestation.scroll_i": "Scroll I",
+  "item.upgradestation.scroll_ii": "Scroll II",
+  "item.upgradestation.scroll_iii": "Scroll III",
+  "item.upgradestation.scroll_iv": "Scroll IV",
+  "item.upgradestation.scroll_of_protection_i": "Scroll Of Protection I",
+  "item.upgradestation.scroll_of_protection_ii": "Scroll of Protection II",
+  "item.upgradestation.scroll_of_protection_iii": "Scroll of Protection III",
+  "item.upgradestation.scroll_of_protection_iv": "Scroll of Protection IV"
 }

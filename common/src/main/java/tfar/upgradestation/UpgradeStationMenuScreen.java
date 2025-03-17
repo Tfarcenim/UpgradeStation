@@ -38,7 +38,7 @@ public class UpgradeStationMenuScreen extends AbstractContainerScreen<UpgradeSta
             int cost = menu.selectedRecipe.getCost();
             if (cost > 0) {
                 Component component = Component.literal("Cost: " + cost);
-                int x = this.imageWidth - 75 - this.font.width(component) - 2;
+                int x = this.imageWidth - 86 - this.font.width(component) / 2;
                 matrices.drawString(font, component, x, 113, menu.hasMoney() ? 0x80ff20 :  0xff6060);
             }
 

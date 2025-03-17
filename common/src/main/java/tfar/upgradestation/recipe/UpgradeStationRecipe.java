@@ -10,25 +10,20 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
-import tfar.upgradestation.ModRecipeSerializers;
-import tfar.upgradestation.ModRecipeTypes;
-import tfar.upgradestation.Strings;
-import tfar.upgradestation.UpgradeStationMenu;
+import tfar.upgradestation.*;
 
 public class UpgradeStationRecipe implements Recipe<Container> {
 
     protected final ResourceLocation id;
     public final Ingredient weapon;//stone sword 0
     public final Ingredient gem;//diamond 1
-    public final Ingredient scroll;//upgrade scroll 2
     final int cost;
     final double baseChance;
 
     final ItemStack result;//netherite sword
 
-    public UpgradeStationRecipe(ResourceLocation id, Ingredient weapon, Ingredient gem, Ingredient scroll, int cost, double baseChance, ItemStack result) {
+    public UpgradeStationRecipe(ResourceLocation id, Ingredient weapon, Ingredient gem,  int cost, double baseChance, ItemStack result) {
         this.id = id;
-        this.scroll = scroll;
         this.weapon = weapon;
         this.gem = gem;
         this.cost = cost;
@@ -47,10 +42,6 @@ public class UpgradeStationRecipe implements Recipe<Container> {
 
     public boolean isGem(ItemStack stack) {
         return gem.test(stack);
-    }
-
-    public boolean isScroll(ItemStack stack){
-        return scroll.test(stack);
     }
 
     @Override
@@ -92,7 +83,13 @@ public class UpgradeStationRecipe implements Recipe<Container> {
     }
 
     public double getActualChance(ItemStack scroll) {
-        return Mth.clamp(baseChance * (1 + scroll.getCount() /4d),0,1);
+
+        ScrollData scrollData = USConfig.CONFIG.scroll_map.get().get(scroll.getItem());
+
+        if (scrollData == null) return baseChance;
+
+
+        return Mth.clamp(baseChance * (1 + scrollData.chanceMultiplier() ),0,1);
     }
 
     public static class Serializer implements RecipeSerializer<UpgradeStationRecipe> {
@@ -101,29 +98,26 @@ public class UpgradeStationRecipe implements Recipe<Container> {
         public UpgradeStationRecipe fromJson(ResourceLocation resourceLocation, JsonObject jsonObject) {
             Ingredient weapon = Ingredient.fromJson(GsonHelper.getNonNull(jsonObject, Strings.WEAPON));
             Ingredient gem = Ingredient.fromJson(GsonHelper.getNonNull(jsonObject, Strings.GEM));
-            Ingredient scroll = Ingredient.fromJson(GsonHelper.getNonNull(jsonObject, Strings.SCROLL));
             int cost = GsonHelper.getAsInt(jsonObject,"cost",0);
             double chance = GsonHelper.getAsDouble(jsonObject,"base_chance",1);
             ItemStack itemstack = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(jsonObject, "result"));
-            return new UpgradeStationRecipe(resourceLocation,weapon,gem,scroll,cost,chance,itemstack);
+            return new UpgradeStationRecipe(resourceLocation,weapon,gem,cost,chance,itemstack);
         }
 
         @Override
         public UpgradeStationRecipe fromNetwork(ResourceLocation resourceLocation, FriendlyByteBuf friendlyByteBuf) {
             Ingredient ingredient = Ingredient.fromNetwork(friendlyByteBuf);
             Ingredient ingredient1 = Ingredient.fromNetwork(friendlyByteBuf);
-            Ingredient ingredient2 = Ingredient.fromNetwork(friendlyByteBuf);
 
             int cost = friendlyByteBuf.readInt();
             double chance = friendlyByteBuf.readDouble();
 
             ItemStack itemstack = friendlyByteBuf.readItem();
-            return new UpgradeStationRecipe(resourceLocation, ingredient, ingredient1, ingredient2,cost,chance, itemstack);
+            return new UpgradeStationRecipe(resourceLocation, ingredient, ingredient1, cost,chance, itemstack);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf friendlyByteBuf, UpgradeStationRecipe upgradeStationRecipe) {
-            upgradeStationRecipe.scroll.toNetwork(friendlyByteBuf);
             upgradeStationRecipe.weapon.toNetwork(friendlyByteBuf);
             upgradeStationRecipe.gem.toNetwork(friendlyByteBuf);
 

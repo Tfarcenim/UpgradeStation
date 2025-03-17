@@ -1,3 +1,10 @@
-// 1.20.1	2025-03-13T13:10:09.5992238	Item Models: upgradestation
-dc4881f83cf78fc26f97458a475b4444b2484695 assets/upgradestation/models/item/upgrade_scroll.json
+// 1.20.1	2025-03-17T03:50:24.2120932	Item Models: upgradestation
+4b9b6317b02f57d40f36145b99f6f26bf6e3ad23 assets/upgradestation/models/item/scroll_i.json
+4b9b6317b02f57d40f36145b99f6f26bf6e3ad23 assets/upgradestation/models/item/scroll_ii.json
+4b9b6317b02f57d40f36145b99f6f26bf6e3ad23 assets/upgradestation/models/item/scroll_iii.json
+4b9b6317b02f57d40f36145b99f6f26bf6e3ad23 assets/upgradestation/models/item/scroll_iv.json
+4b9b6317b02f57d40f36145b99f6f26bf6e3ad23 assets/upgradestation/models/item/scroll_of_protection_i.json
+4b9b6317b02f57d40f36145b99f6f26bf6e3ad23 assets/upgradestation/models/item/scroll_of_protection_ii.json
+4b9b6317b02f57d40f36145b99f6f26bf6e3ad23 assets/upgradestation/models/item/scroll_of_protection_iii.json
+4b9b6317b02f57d40f36145b99f6f26bf6e3ad23 assets/upgradestation/models/item/scroll_of_protection_iv.json
 ac1d24c3184b37f5f0e2ec7d892e28ab13f97314 assets/upgradestation/models/item/upgrade_station.json
