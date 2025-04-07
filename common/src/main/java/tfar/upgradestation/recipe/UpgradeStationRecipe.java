@@ -1,29 +1,26 @@
 package tfar.upgradestation.recipe;
 
-import com.google.gson.JsonObject;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.Mth;
-import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
 import tfar.upgradestation.*;
 
-public class UpgradeStationRecipe implements Recipe<Container> {
+public class UpgradeStationRecipe implements Recipe<RecipeInput> {
 
-    protected final ResourceLocation id;
     public final Ingredient weapon;//stone sword 0
     public final Ingredient gem;//diamond 1
     final int cost;
     final double baseChance;
-
     final ItemStack result;//netherite sword
 
-    public UpgradeStationRecipe(ResourceLocation id, Ingredient weapon, Ingredient gem,  int cost, double baseChance, ItemStack result) {
-        this.id = id;
+    public UpgradeStationRecipe(Ingredient weapon, Ingredient gem, int cost, double baseChance, ItemStack result) {
         this.weapon = weapon;
         this.gem = gem;
         this.cost = cost;
@@ -32,7 +29,7 @@ public class UpgradeStationRecipe implements Recipe<Container> {
     }
 
     @Override
-    public boolean matches(Container container, Level level) {
+    public boolean matches(RecipeInput container, Level level) {
         return isWeapon(container.getItem(UpgradeStationMenu.WEAPON_SLOT)) && isGem(container.getItem(UpgradeStationMenu.GEM_SLOT));
     }
 
@@ -45,7 +42,7 @@ public class UpgradeStationRecipe implements Recipe<Container> {
     }
 
     @Override
-    public ItemStack assemble(Container container, RegistryAccess registryAccess) {
+    public ItemStack assemble(RecipeInput container, HolderLookup.Provider provider) {
         return result.copy();
     }
 
@@ -55,13 +52,8 @@ public class UpgradeStationRecipe implements Recipe<Container> {
     }
 
     @Override
-    public ItemStack getResultItem(RegistryAccess registryAccess) {
+    public ItemStack getResultItem(HolderLookup.Provider provider) {
         return result;
-    }
-
-    @Override
-    public ResourceLocation getId() {
-        return id;
     }
 
     @Override
@@ -84,47 +76,60 @@ public class UpgradeStationRecipe implements Recipe<Container> {
 
     public double getActualChance(ItemStack scroll) {
 
-        ScrollData scrollData = USConfig.CONFIG.scroll_map.get().get(scroll.getItem());
+        ScrollData scrollData = USConfig.getScrollData(scroll.getItem());
 
         if (scrollData == null) return baseChance;
 
 
-        return Mth.clamp(baseChance * (1 + scrollData.chanceMultiplier() ),0,1);
+        return Mth.clamp(baseChance * (1 + scrollData.chanceMultiplier()), 0, 1);
     }
 
     public static class Serializer implements RecipeSerializer<UpgradeStationRecipe> {
 
+        public static final MapCodec<UpgradeStationRecipe> CODEC = RecordCodecBuilder.mapCodec(instance ->
+                instance.group(
+                                Ingredient.CODEC.fieldOf(Strings.WEAPON).forGetter(upgradeStationRecipe -> upgradeStationRecipe.weapon),
+                                Ingredient.CODEC.fieldOf(Strings.GEM).forGetter(upgradeStationRecipe -> upgradeStationRecipe.gem),
+                                Codec.INT.fieldOf("cost").forGetter(UpgradeStationRecipe::getCost),
+                                Codec.DOUBLE.fieldOf("base_chance").forGetter(UpgradeStationRecipe::getBaseChance),
+                        ItemStack.CODEC.fieldOf("result").forGetter(upgradeStationRecipe -> upgradeStationRecipe.result)
+                        )
+                        .apply(instance, UpgradeStationRecipe::new)
+        );
+
+        public static final StreamCodec<RegistryFriendlyByteBuf,UpgradeStationRecipe> STREAM_CODEC =StreamCodec.of(
+                Serializer::toNetwork, Serializer::fromNetwork
+        );
+
         @Override
-        public UpgradeStationRecipe fromJson(ResourceLocation resourceLocation, JsonObject jsonObject) {
-            Ingredient weapon = Ingredient.fromJson(GsonHelper.getNonNull(jsonObject, Strings.WEAPON));
-            Ingredient gem = Ingredient.fromJson(GsonHelper.getNonNull(jsonObject, Strings.GEM));
-            int cost = GsonHelper.getAsInt(jsonObject,"cost",0);
-            double chance = GsonHelper.getAsDouble(jsonObject,"base_chance",1);
-            ItemStack itemstack = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(jsonObject, "result"));
-            return new UpgradeStationRecipe(resourceLocation,weapon,gem,cost,chance,itemstack);
+        public MapCodec<UpgradeStationRecipe> codec() {
+            return CODEC;
         }
 
         @Override
-        public UpgradeStationRecipe fromNetwork(ResourceLocation resourceLocation, FriendlyByteBuf friendlyByteBuf) {
-            Ingredient ingredient = Ingredient.fromNetwork(friendlyByteBuf);
-            Ingredient ingredient1 = Ingredient.fromNetwork(friendlyByteBuf);
+        public StreamCodec<RegistryFriendlyByteBuf, UpgradeStationRecipe> streamCodec() {
+            return STREAM_CODEC;
+        }
+
+        public static UpgradeStationRecipe fromNetwork(RegistryFriendlyByteBuf friendlyByteBuf) {
+            Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(friendlyByteBuf);
+            Ingredient ingredient1 = Ingredient.CONTENTS_STREAM_CODEC.decode(friendlyByteBuf);
 
             int cost = friendlyByteBuf.readInt();
             double chance = friendlyByteBuf.readDouble();
 
-            ItemStack itemstack = friendlyByteBuf.readItem();
-            return new UpgradeStationRecipe(resourceLocation, ingredient, ingredient1, cost,chance, itemstack);
+            ItemStack itemstack = ItemStack.STREAM_CODEC.decode(friendlyByteBuf);
+            return new UpgradeStationRecipe(ingredient, ingredient1, cost, chance, itemstack);
         }
 
-        @Override
-        public void toNetwork(FriendlyByteBuf friendlyByteBuf, UpgradeStationRecipe upgradeStationRecipe) {
-            upgradeStationRecipe.weapon.toNetwork(friendlyByteBuf);
-            upgradeStationRecipe.gem.toNetwork(friendlyByteBuf);
+        public static void toNetwork(RegistryFriendlyByteBuf friendlyByteBuf, UpgradeStationRecipe upgradeStationRecipe) {
+            Ingredient.CONTENTS_STREAM_CODEC.encode(friendlyByteBuf,upgradeStationRecipe.weapon);
+            Ingredient.CONTENTS_STREAM_CODEC.encode(friendlyByteBuf,upgradeStationRecipe.gem);
 
             friendlyByteBuf.writeInt(upgradeStationRecipe.cost);
             friendlyByteBuf.writeDouble(upgradeStationRecipe.baseChance);
 
-            friendlyByteBuf.writeItem(upgradeStationRecipe.result);
+            ItemStack.STREAM_CODEC.encode(friendlyByteBuf,upgradeStationRecipe.result);
         }
     }
 }

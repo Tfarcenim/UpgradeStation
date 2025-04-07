@@ -29,14 +29,12 @@ import com.electronwill.nightconfig.toml.TomlFormat;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
-import com.mojang.serialization.DataResult.PartialResult;
 import com.mojang.serialization.DynamicOps;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.annotation.Nonnull;
 import java.time.temporal.Temporal;
 import java.util.*;
 import java.util.function.Supplier;
@@ -44,7 +42,7 @@ import java.util.stream.Stream;
 
 
 /**
- * Helpers for creating configs and defining complex objects in configs
+ * Helpers for creating configs and defining complex objects in configs 
  */
 public class ConfigHelper
 {
@@ -63,10 +61,10 @@ public class ConfigHelper
      * If the codec fails to deserialize the config field at a later time, an error message will be logged and this default instance will be used instead.
      * @return A reload-sensitive wrapper around your config object value. Use ConfigObject#get to get the most up-to-date object.
      */
-    public static <T> ConfigObject<T> defineObject(ForgeConfigSpec.Builder builder, String name, Codec<T> codec, T defaultObject)
+    public static <T> ConfigObject<T> defineObject(ModConfigSpec.Builder builder, String name, Codec<T> codec, T defaultObject)
     {
         DataResult<Object> encodeResult = codec.encodeStart(TomlConfigOps.INSTANCE, defaultObject);
-        Object encodedObject = encodeResult.getOrThrow(false, s -> LOGGER.error("Unable to encode default value: {}", s));
+        Object encodedObject = encodeResult.getOrThrow(s -> new IllegalArgumentException(String.format("Unable to encode default value %s: %s", defaultObject, s)));
         ConfigValue<Object> value = builder.define(name, encodedObject);
         return new ConfigObject<>(value, codec, defaultObject, encodedObject);
     }
@@ -76,11 +74,11 @@ public class ConfigHelper
      **/
     public static class ConfigObject<T> implements Supplier<T>
     {
-        private @Nonnull final ConfigValue<Object> value;
-        private @Nonnull final Codec<T> codec;
-        private @Nonnull Object cachedObject;
-        private @Nonnull T parsedObject;
-        private @Nonnull T defaultObject;
+        private final ConfigValue<Object> value;
+        private final Codec<T> codec;
+        private Object cachedObject;
+        private T parsedObject;
+        private T defaultObject;
 
         private ConfigObject(ConfigValue<Object> value, Codec<T> codec, T defaultObject, Object encodedDefaultObject)
         {
@@ -92,7 +90,6 @@ public class ConfigHelper
         }
 
         @Override
-        @Nonnull
         public T get()
         {
             Object freshObject = this.value.get();
@@ -123,7 +120,7 @@ public class ConfigHelper
         private T getReparsedObject(Object obj)
         {
             DataResult<T> parseResult = this.codec.parse(TomlConfigOps.INSTANCE, obj);
-            return parseResult.get().map(
+            return parseResult.mapOrElse(
                     result -> result,
                     failure ->
                     {
@@ -210,7 +207,7 @@ public class ConfigHelper
         @Override
         public Object createBoolean(boolean value)
         {
-            return value;
+            return Boolean.valueOf(value);
         }
 
         @Override
@@ -281,7 +278,7 @@ public class ConfigHelper
                 return DataResult.error(() -> "mergeToMap called with not a map: " + map, map);
             }
             DataResult<String> stringResult = this.getStringValue(key);
-            Optional<PartialResult<String>> badResult = stringResult.error();
+            Optional<DataResult.Error<String>> badResult = stringResult.error();
             if (badResult.isPresent())
             {
                 return DataResult.error(() -> "key is not a string: " + key, map);
@@ -302,11 +299,10 @@ public class ConfigHelper
         @Override
         public DataResult<Stream<Pair<Object, Object>>> getMapValues(Object input)
         {
-            if (!(input instanceof Config))
+            if (!(input instanceof Config config))
             {
                 return DataResult.error(() -> "Not a Config: " + input);
             }
-            final Config config = (Config)input;
             return DataResult.success(config.entrySet().stream().map(entry -> Pair.of(entry.getKey(), entry.getValue())));
         }
 
@@ -314,7 +310,7 @@ public class ConfigHelper
         public Object createMap(Stream<Pair<Object, Object>> map)
         {
             final Config result = TomlFormat.newConfig();
-            map.forEach(p -> result.add(this.getStringValue(p.getFirst()).getOrThrow(false, s -> {}), p.getSecond()));
+            map.forEach(p -> result.add(this.getStringValue(p.getFirst()).getOrThrow(), p.getSecond()));
             return result;
         }
 

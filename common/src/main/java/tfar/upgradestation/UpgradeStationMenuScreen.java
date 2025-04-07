@@ -23,7 +23,7 @@ public class UpgradeStationMenuScreen extends AbstractContainerScreen<UpgradeSta
 
     @Override
     public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(pGuiGraphics);
+        this.renderBlurredBackground(pPartialTick);
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         this.renderTooltip(pGuiGraphics, pMouseX, pMouseY);
     }
@@ -35,7 +35,7 @@ public class UpgradeStationMenuScreen extends AbstractContainerScreen<UpgradeSta
         //super.renderLabels(matrices, $$1, $$2);
 
         if (menu.selectedRecipe != null && !menu.resultSlot.getItem(0).isEmpty()) {
-            int cost = menu.selectedRecipe.getCost();
+            int cost = menu.selectedRecipe.value().getCost();
             if (cost > 0) {
                 Component component = Component.literal("Cost: " + cost);
                 int x = this.imageWidth - 86 - this.font.width(component) / 2;

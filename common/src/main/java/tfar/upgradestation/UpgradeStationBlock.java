@@ -52,11 +52,11 @@ public class UpgradeStationBlock extends Block {
     }
 
     @Override
-    public InteractionResult use(BlockState $$0, Level $$1, BlockPos $$2, Player player, InteractionHand $$4, BlockHitResult $$5) {
-        if ($$1.isClientSide) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         } else {
-            player.openMenu($$0.getMenuProvider($$1, $$2));
+            player.openMenu(state.getMenuProvider(level, pos));
             //player.awardStat(Stats.INTERACT_WITH_CRAFTING_TABLE);
             return InteractionResult.CONSUME;
         }

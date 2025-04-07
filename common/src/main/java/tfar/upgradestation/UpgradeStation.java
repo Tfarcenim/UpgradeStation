@@ -36,7 +36,7 @@ public class UpgradeStation {
     }
 
     public static ResourceLocation id(String path) {
-        return new ResourceLocation(MOD_ID,path);
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID,path);
     }
 
     public static Stream<Block> getKnownBlocks() {

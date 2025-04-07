@@ -1,6 +1,5 @@
 package tfar.upgradestation;
 
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -10,9 +9,10 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.LevelEvent;
-import org.jetbrains.annotations.Nullable;
 import tfar.upgradestation.platform.Services;
 import tfar.upgradestation.recipe.UpgradeStationRecipe;
 
@@ -27,7 +27,7 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
     public static final int RESULT_SLOT = 3;
 
     private final ContainerLevelAccess access;
-    private final Container craftSlots = new SimpleContainer(3) {
+    private final SimpleContainer craftSlots = new SimpleContainer(3) {
         @Override
         public void setChanged() {
             super.setChanged();
@@ -37,9 +37,8 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
     final ResultContainer resultSlot = new ResultContainer();
     private final Player player;
     private final Level level;
-    private final List<UpgradeStationRecipe> recipes;
-    @Nullable
-    UpgradeStationRecipe selectedRecipe;
+    private final List<RecipeHolder<UpgradeStationRecipe>> recipes;
+    RecipeHolder<UpgradeStationRecipe> selectedRecipe;
 
     public UpgradeStationMenu(int id, Inventory $$1) {
         this(id, $$1, ContainerLevelAccess.NULL);
@@ -57,19 +56,19 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(this.craftSlots, WEAPON_SLOT, 46, 81){
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return super.mayPlace(stack) && recipes.stream().anyMatch(upgradeStationRecipe -> upgradeStationRecipe.isWeapon(stack));
+                return super.mayPlace(stack) && recipes.stream().anyMatch(upgradeStationRecipe -> upgradeStationRecipe.value().isWeapon(stack));
             }
         });
         this.addSlot(new Slot(this.craftSlots, GEM_SLOT, 46 + 34, 81){
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return super.mayPlace(stack) && recipes.stream().anyMatch(upgradeStationRecipe -> upgradeStationRecipe.isGem(stack));
+                return super.mayPlace(stack) && recipes.stream().anyMatch(upgradeStationRecipe -> upgradeStationRecipe.value().isGem(stack));
             }
         });
         this.addSlot(new Slot(this.craftSlots, SCROLL_SLOT, 46 + 2 * 34, 81){
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return super.mayPlace(stack) && USConfig.CONFIG.scroll_map.get().containsKey(stack.getItem());
+                return super.mayPlace(stack) && USConfig.getScrollData(stack.getItem()) != null;
             }
 
             @Override
@@ -92,7 +91,7 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
 
             @Override
             public boolean mayPickup(Player player) {
-                return selectedRecipe != null && selectedRecipe.matches(craftSlots, level) && hasMoney();
+                return selectedRecipe != null && selectedRecipe.value().matches(of(craftSlots), level) && hasMoney();
             }
         });
 
@@ -111,7 +110,7 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
     }
 
     public boolean hasMoney() {
-        return Services.PLATFORM.hasAtLeast(player,selectedRecipe != null ? selectedRecipe.getCost() : 0);
+        return Services.PLATFORM.hasAtLeast(player,selectedRecipe != null ? selectedRecipe.value().getCost() : 0);
     }
 
     /**
@@ -134,18 +133,32 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
     }
 
     public void createResult() {
-        List<UpgradeStationRecipe> list = this.level.getRecipeManager().getRecipesFor(ModRecipeTypes.UPGRADE_STATION, craftSlots, this.level);
+        List<RecipeHolder<UpgradeStationRecipe>> list = this.level.getRecipeManager().getRecipesFor(ModRecipeTypes.UPGRADE_STATION, of(craftSlots), this.level);
         if (list.isEmpty()) {
             this.resultSlot.setItem(0, ItemStack.EMPTY);
         } else {
-            UpgradeStationRecipe smithingrecipe = list.get(0);
-            ItemStack itemstack = smithingrecipe.assemble(craftSlots, this.level.registryAccess());
+            RecipeHolder<UpgradeStationRecipe> smithingrecipe = list.getFirst();
+            ItemStack itemstack = smithingrecipe.value().assemble(of(craftSlots), this.level.registryAccess());
             if (itemstack.isItemEnabled(this.level.enabledFeatures())) {
                 this.selectedRecipe = smithingrecipe;
                 this.resultSlot.setRecipeUsed(smithingrecipe);
                 this.resultSlot.setItem(0, itemstack);
             }
         }
+    }
+
+    public static RecipeInput of(SimpleContainer container) {
+        return new RecipeInput() {
+            @Override
+            public ItemStack getItem(int index) {
+                return container.getItem(index);
+            }
+
+            @Override
+            public int size() {
+                return container.getContainerSize();
+            }
+        };
     }
 
     /**
@@ -204,7 +217,7 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
         boolean worked = player.getRandom().nextDouble() < getActualChance();
         ItemStack scroll = craftSlots.getItem(SCROLL_SLOT);
 
-        boolean protectIfFailed = !scroll.isEmpty() && USConfig.CONFIG.scroll_map.get().get(scroll.getItem()).protectsWeapon();
+        boolean protectIfFailed = !scroll.isEmpty() && USConfig.getScrollData(scroll.getItem()).protectsWeapon();
 
         if (worked) {
             stack.onCraftedBy(player.level(), player, stack.getCount());
@@ -214,7 +227,7 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
         }
 
         this.access.execute((p_40263_, p_40264_) -> {
-            Services.PLATFORM.takeMoney(player,selectedRecipe.getCost());
+            Services.PLATFORM.takeMoney(player,selectedRecipe.value().getCost());
 
             if (!protectIfFailed || worked) {
                 this.shrinkStackInSlot(0);
@@ -262,13 +275,13 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
 
     public double getActualChance(){
         ItemStack stack = craftSlots.getItem(SCROLL_SLOT);
-        return selectedRecipe != null ? selectedRecipe.getActualChance(stack) : 0;
+        return selectedRecipe != null ? selectedRecipe.value().getActualChance(stack) : 0;
     }
 
 
     public int getSlotToQuickMoveTo(ItemStack stack) {
         return this.recipes.stream().map((p_266640_) -> {
-            return findSlotMatchingIngredient(p_266640_, stack);
+            return findSlotMatchingIngredient(p_266640_.value(), stack);
         }).filter(Optional::isPresent).findFirst().orElse(Optional.of(0)).get();
     }
 
@@ -278,7 +291,7 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
         } else if (recipe.isGem(stack)) {
             return Optional.of(GEM_SLOT);
         } else {
-            return USConfig.CONFIG.scroll_map.get().containsKey(stack.getItem()) ? Optional.of(SCROLL_SLOT) : Optional.empty();
+            return USConfig.getScrollData(stack.getItem()) != null ? Optional.of(SCROLL_SLOT) : Optional.empty();
         }
     }
 
@@ -291,7 +304,7 @@ public class UpgradeStationMenu extends AbstractContainerMenu {
     }
 
     public boolean canMoveIntoInputSlots(ItemStack stack) {
-        return this.recipes.stream().map((p_266647_) -> findSlotMatchingIngredient(p_266647_, stack)).anyMatch(Optional::isPresent);
+        return this.recipes.stream().map((p_266647_) -> findSlotMatchingIngredient(p_266647_.value(), stack)).anyMatch(Optional::isPresent);
     }
 
     @Override

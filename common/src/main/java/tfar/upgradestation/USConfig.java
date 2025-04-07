@@ -2,42 +2,52 @@ package tfar.upgradestation;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class USConfig {
     public static final USConfig CONFIG;
-    public static final ForgeConfigSpec SERVER_SPEC;
+    public static final ModConfigSpec SERVER_SPEC;
 
     static {
-        final Pair<USConfig, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(USConfig::new);
+        final Pair<USConfig, ModConfigSpec> specPair = new ModConfigSpec.Builder().configure(USConfig::new);
         SERVER_SPEC = specPair.getRight();
         CONFIG = specPair.getLeft();
     }
 
-    public final ConfigHelper.ConfigObject<Map<Item, ScrollData>> scroll_map;
+    public static ScrollData getScrollData(Item item) {
+        return CONFIG.scroll_map.get().get(BuiltInRegistries.ITEM.getKey(item));
+    }
 
-    public USConfig(ForgeConfigSpec.Builder builder)  {
+    public static Set<ResourceLocation> getScrolls() {
+        return CONFIG.scroll_map.get().keySet();
+    }
+
+    private final ConfigHelper.ConfigObject<Map<ResourceLocation, ScrollData>> scroll_map;
+
+    public USConfig(ModConfigSpec.Builder builder)  {
         builder.push("general");
-        scroll_map = ConfigHelper.defineObject(builder,"scroll_map", Codec.unboundedMap(BuiltInRegistries.ITEM.byNameCodec(),ScrollData.CODEC),defaults());
+        scroll_map = ConfigHelper.defineObject(builder,"scroll_map", Codec.unboundedMap(ResourceLocation.CODEC,ScrollData.CODEC),defaults());
         builder.pop();
     }
 
-    static Map<Item, ScrollData> defaults() {
-        Map<Item, ScrollData> map =  new HashMap<>();
-        map.put(Init.SCROLL_I,new ScrollData(.25,false));
-        map.put(Init.SCROLL_II,new ScrollData(.5,false));
-        map.put(Init.SCROLL_III,new ScrollData(.75,false));
-        map.put(Init.SCROLL_IV,new ScrollData(1,false));
+    static Map<ResourceLocation, ScrollData> defaults() {
+        Map<ResourceLocation, ScrollData> map =  new HashMap<>();
+        map.put(UpgradeStation.id("scroll_i"),new ScrollData(.25,false));
+        map.put(UpgradeStation.id("scroll_ii"),new ScrollData(.5,false));
+        map.put(UpgradeStation.id("scroll_iii"),new ScrollData(.75,false));
+        map.put(UpgradeStation.id("scroll_iv"),new ScrollData(1,false));
 
-        map.put(Init.SCROLL_OF_PROTECTION_I,new ScrollData(.25,true));
-        map.put(Init.SCROLL_OF_PROTECTION_II,new ScrollData(.5,true));
-        map.put(Init.SCROLL_OF_PROTECTION_III,new ScrollData(.75,true));
-        map.put(Init.SCROLL_OF_PROTECTION_IV,new ScrollData(1,true));
+        map.put(UpgradeStation.id("scroll_of_protection_i"),new ScrollData(.25,true));
+        map.put(UpgradeStation.id("scroll_of_protection_ii"),new ScrollData(.5,true));
+        map.put(UpgradeStation.id("scroll_of_protection_iii"),new ScrollData(.75,true));
+        map.put(UpgradeStation.id("scroll_of_protection_iv"),new ScrollData(1,true));
         return map;
     }
 
